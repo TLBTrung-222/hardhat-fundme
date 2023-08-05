@@ -51,10 +51,10 @@ describe("FundMe", function () {
         it("withdraw Ether from contract to owner", async function () {
             //* Arrange
             // First, we need to retrieve the balance of the owner (deployer) and the contract
-            const startingFundMeBalance = await fundMe.deployer.getBalance(
-                fundMe.address
+            const startingFundMeBalance = await ethers.provider.getBalance(
+                fundMe.getAddress()
             );
-            const startingDeployerBalance = await fundMe.provider.getBalance(
+            const startingDeployerBalance = await ethers.provider.getBalance(
                 deployer
             );
 
@@ -63,10 +63,10 @@ describe("FundMe", function () {
             const transactionResponse = await fundMe.withdraw();
             const transactionReceipt = await transactionResponse.wait(1);
 
-            const endingFundMeBalance = await fundMe.provider.getBalance(
-                fundMe.address
+            const endingFundMeBalance = await ethers.provider.getBalance(
+                fundMe.getAddress()
             );
-            const endingDeployerBalance = await fundMe.provider.getBalance(
+            const endingDeployerBalance = await ethers.provider.getBalance(
                 deployer
             );
 
