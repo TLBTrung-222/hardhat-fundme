@@ -52,7 +52,7 @@ describe("FundMe", function () {
             //* Arrange
             // First, we need to retrieve the balance of the owner (deployer) and the contract
             const startingFundMeBalance = await fundMe.deployer.getBalance(
-                fundMe.getAddress()
+                fundMe.address
             );
             const startingDeployerBalance = await fundMe.provider.getBalance(
                 deployer
