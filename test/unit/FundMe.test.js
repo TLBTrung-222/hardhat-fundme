@@ -73,8 +73,8 @@ describe("FundMe", function () {
             //* Assert
             // Need to compare if the contract's balance down to 0, and the owner's balance added contract's fund
 
-            assert(endingFundMeBalance, 0);
-            assert(
+            assert.equal(endingFundMeBalance, 0);
+            assert.equal(
                 endingDeployerBalance,
                 startingDeployerBalance + startingFundMeBalance
             );
