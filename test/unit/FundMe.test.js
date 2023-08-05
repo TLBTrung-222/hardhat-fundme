@@ -60,7 +60,8 @@ describe("FundMe", function () {
 
             //* Act
             // Let's perform the withdraw and retrieve the result
-            await fundMe.withdraw();
+            const transactionResponse = await fundMe.withdraw();
+            const transactionReceipt = await transactionResponse.wait(1);
 
             const endingFundMeBalance = await fundMe.provider.getBalance(
                 fundMe.address
