@@ -48,7 +48,8 @@ describe("FundMe", function () {
             await fundMe.fund({ value: sendValue });
         });
 
-        it("withdraw Ether from contract to owner", async function () {
+        // Let's check with only one funder and see if the withdraw function work as expected
+        it("withdraw Ether from contract with one funder", async function () {
             //* Arrange
             // First, we need to retrieve the balance of the owner (deployer) and the contract
             const startingFundMeBalance = await ethers.provider.getBalance(
@@ -63,6 +64,10 @@ describe("FundMe", function () {
             const transactionResponse = await fundMe.withdraw();
             const transactionReceipt = await transactionResponse.wait(1);
 
+            // Calculate gas cost for this transcation
+            const { gasPrice, gasUsed } = transactionReceipt;
+            const gasCost = gasPrice * gasUsed;
+
             const endingFundMeBalance = await ethers.provider.getBalance(
                 await fundMe.getAddress()
             );
@@ -74,10 +79,73 @@ describe("FundMe", function () {
             // Need to compare if the contract's balance down to 0, and the owner's balance added contract's fund
 
             assert.equal(endingFundMeBalance, 0);
-            // assert.equal(
-            //     endingDeployerBalance,
-            //     startingDeployerBalance + startingFundMeBalance
-            // );
+            assert.equal(
+                endingDeployerBalance,
+                startingDeployerBalance + startingFundMeBalance - gasCost
+            );
+        });
+
+        // Now let's check with multiple funder
+        // Just like check with one funder, but now we need to check if the funders data structure
+        // got reset properly or not
+        it("withdraw Ether from contract with mutiple funders", async function () {
+            //* Arrange
+            // Loop through all account, connect to our contract and call fund function on each account
+            const accounts = ethers.getSigners();
+            for (let index = 0; index < accounts.length; index++) {
+                const accountToConnect = accounts[index];
+                // Connect this account to fund me contract
+                const fundMeConnectedContract =
+                    fundMe.connect(accountToConnect);
+                await fundMeConnectedContract.fund({ value: sendValue });
+            }
+
+            const startingFundMeBalance = await ethers.provider.getBalance(
+                await fundMe.getAddress()
+            );
+            const startingDeployerBalance = await ethers.provider.getBalance(
+                deployer
+            );
+
+            //* Act
+            // Let's perform the withdraw and retrieve the result
+            const transactionResponse = await fundMe.withdraw();
+            const transactionReceipt = await transactionResponse.wait(1);
+
+            // Calculate gas cost for this transcation
+            const { gasPrice, gasUsed } = transactionReceipt;
+            const gasCost = gasPrice * gasUsed;
+
+            const endingFundMeBalance = await ethers.provider.getBalance(
+                await fundMe.getAddress()
+            );
+            const endingDeployerBalance = await ethers.provider.getBalance(
+                deployer
+            );
+
+            //* Assert
+            assert.equal(endingFundMeBalance, 0);
+            assert.equal(
+                endingDeployerBalance,
+                startingDeployerBalance + startingFundMeBalance - gasCost
+            );
+
+            // Need to check for the funder reset
+
+            // Array reset (the array resetted so if we access the first elemet, it's will be reverted)
+            await expect(fundMe.funders(0)).to.be.reverted;
+
+            // Mapping reset
+            for (
+                let index = 0;
+                index < fundMe.addressToAmountFunded.length;
+                index++
+            ) {
+                assert.equal(
+                    await fundMe.addressToAmountFunded(accounts[i].address),
+                    0
+                );
+            }
         });
     });
 });
