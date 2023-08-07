@@ -9,7 +9,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
     let ethUsdpriceFeedAddress;
 
-    // If we on local network, retrieve price feed address from the deployed mock contract address
+    // If we on local network, retrieve price feed address from the deployed mock contract
     if (chainID == 31337) {
         const ethUsdAggregator = await deployments.get("MockV3Aggregator");
         ethUsdpriceFeedAddress = ethUsdAggregator.address;
