@@ -20,8 +20,8 @@ describe("FundMe", function () {
 
     describe("constructor", function () {
         it("set the aggregator address correctly", async function () {
-            const response = await fundMe.priceFeed;
-            assert.equal(response, mockV3Aggregator.address);
+            const response = await fundMe.getPriceFeed();
+            assert.equal(response, await mockV3Aggregator.getAddress());
         });
     });
 
@@ -32,12 +32,12 @@ describe("FundMe", function () {
 
         it("updated the amount funded mapping", async function () {
             await fundMe.fund({ value: sendValue });
-            const response = await fundMe.addressToAmountFunded(deployer);
+            const response = await fundMe.getAddressToAmountFunded(deployer);
             assert.equal(response, sendValue);
         });
         it("add funder to funders array", async function () {
             await fundMe.fund({ value: sendValue });
-            const funder = await fundMe.funders(0);
+            const funder = await fundMe.getFunder(0);
             assert.equal(funder, deployer);
         });
     });
@@ -91,7 +91,7 @@ describe("FundMe", function () {
         it("withdraw Ether from contract with mutiple funders", async function () {
             //* Arrange
             // Loop through all account, connect to our contract and call fund function on each account
-            const accounts = ethers.getSigners();
+            const accounts = await ethers.getSigners();
             for (let index = 0; index < accounts.length; index++) {
                 const accountToConnect = accounts[index];
                 // Connect this account to fund me contract
@@ -133,19 +133,25 @@ describe("FundMe", function () {
             // Need to check for the funder reset
 
             // Array reset (the array resetted so if we access the first elemet, it's will be reverted)
-            await expect(fundMe.funders(0)).to.be.reverted;
+            await expect(fundMe.getFunder(0)).to.be.reverted;
 
             // Mapping reset
-            for (
-                let index = 0;
-                index < fundMe.addressToAmountFunded.length;
-                index++
-            ) {
+            for (let index = 0; index < 6; index++) {
                 assert.equal(
-                    await fundMe.addressToAmountFunded(accounts[i].address),
+                    await fundMe.getAddressToAmountFunded(
+                        accounts[index].address
+                    ),
                     0
                 );
             }
+        });
+
+        it("only allows the owner to withdraw", async function () {
+            const accounts = await ethers.getSigners();
+            const attacker = accounts[2];
+            //connect attacker (signer objet) to our FundMe contract
+            const attackerConnectedFundMe = await fundMe.connect(attacker);
+            await expect(attackerConnectedFundMe.withdraw()).to.be.reverted;
         });
     });
 });

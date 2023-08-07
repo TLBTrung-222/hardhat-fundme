@@ -8,12 +8,12 @@ error FundMe__NotOwner();
 contract FundMe {
     using PriceConverter for uint256;
 
-    uint256 public constant minimumUSD = 10 * 1e18;
+    uint256 public constant MINIMUM_USD = 10 * 1e18;
 
-    address[] public funders;
-    mapping(address => uint256) public addressToAmountFunded;
+    address[] private s_funders;
+    mapping(address => uint256) private s_addressToAmountFunded;
     address public immutable i_owner;
-    AggregatorV3Interface priceFeed;
+    AggregatorV3Interface private s_priceFeed;
 
     modifier onlyOwner() {
         if (msg.sender != i_owner) {
@@ -24,7 +24,7 @@ contract FundMe {
 
     constructor(address priceFeedAddress) {
         i_owner = msg.sender;
-        priceFeed = AggregatorV3Interface(priceFeedAddress);
+        s_priceFeed = AggregatorV3Interface(priceFeedAddress);
     }
 
     receive() external payable {
@@ -37,24 +37,24 @@ contract FundMe {
 
     function fund() public payable {
         require(
-            msg.value.getConversionRate(priceFeed) >= minimumUSD,
+            msg.value.getConversionRate(s_priceFeed) >= MINIMUM_USD,
             "Didn't send enough ETH"
         );
         address funder = msg.sender;
-        funders.push(funder);
-        addressToAmountFunded[funder] = msg.value;
+        s_funders.push(funder);
+        s_addressToAmountFunded[funder] = msg.value;
     }
 
     function withdraw() public onlyOwner {
         for (
             uint256 funderIndex = 0;
-            funderIndex < funders.length;
+            funderIndex < s_funders.length;
             funderIndex++
         ) {
-            address funderAddress = funders[funderIndex];
-            addressToAmountFunded[funderAddress] = 0;
+            address funderAddress = s_funders[funderIndex];
+            s_addressToAmountFunded[funderAddress] = 0;
         }
-        funders = new address[](0);
+        s_funders = new address[](0);
 
         // withdraw the funds using call method
         (bool callSuccess /* bytes dataReturned*/, ) = payable(msg.sender).call{
@@ -63,7 +63,21 @@ contract FundMe {
         require(callSuccess, "Send failed");
     }
 
+    function getOwner() public view returns (address) {
+        return i_owner;
+    }
+
+    function getFunder(uint256 index) public view returns (address) {
+        return s_funders[index];
+    }
+
+    function getAddressToAmountFunded(
+        address funder
+    ) public view returns (uint256) {
+        return s_addressToAmountFunded[funder];
+    }
+
     function getPriceFeed() public view returns (AggregatorV3Interface) {
-        return priceFeed;
+        return s_priceFeed;
     }
 }
